@@ -39,9 +39,8 @@ namespace financial_reporting
 					Excel.Worksheet xlWorkSheet = xlWorkBook.Worksheets[xlWorkSheetTemplate.Index-1];
 
 					var values = mapValues(record);
-					var name   = (string)values["government.title"];
 
-					xlWorkSheet.Name = name.Substring(0, Math.Min(name.Length, 30));
+					xlWorkSheet.Name = getReportName(record);
 
                     populate(xlWorkSheet, values, bindings);
 				}
@@ -99,12 +98,25 @@ namespace financial_reporting
         //==============================
         //
         //==============================
+        private static string getReportName(JObject report) {
+        
+            var name   = (string)report["government"]["title"];
+
+            return name.Substring(0, Math.Min(name.Length, 30));
+        }
+
+        //==============================
+        //
+        //==============================
         private static void populate(Excel.Worksheet sheet, IDictionary<string, object> values, IEnumerable<Binding> bindings)
         {
-			Console.WriteLine("Compiling {0}...", sheet.Name);
+            var i=0;
+            var count = bindings.Count();
 
             foreach (var binding in bindings)
             {
+    			Console.Write("\rCompiling {0} {1}% ({2}/{3})...  ", sheet.Name, (++i*100)/count, i, count);
+
 				object value = "";
 
 				if(values.ContainsKey(binding.binding))
@@ -119,6 +131,8 @@ namespace financial_reporting
 
 				sheet.Cells[binding.row, binding.col].Value2 = value;
             }
+
+    		Console.WriteLine();
         }
 
         //==============================
@@ -271,6 +285,15 @@ namespace financial_reporting
 
             foreach(var eTerm in eTerms) {
 
+                if(eTerm["identifier"].Type != JTokenType.String)
+                {
+                    if(eTerm["identifier"].Type != JTokenType.Null && eTerm["identifier"].Type != JTokenType.Undefined) {
+                        Console.WriteLine("WARNING(normalizeTerms): Invalid identifier type {0} of `({2})` report\n{1}", eTerm["identifier"].Type, eTerm.Parent, getReportName(record));
+                    }
+
+                    continue;
+                }
+
                 var identifier = (string)eTerm["identifier"];
                 var term = getTerm(identifier??"");
 
@@ -373,6 +396,12 @@ namespace financial_reporting
 			if(array!=null) {
 				foreach(JToken item in array)
 				{
+                    if(item[key]==null) {
+                        Console.WriteLine("WARNING(__keyBy): `{0}` is not specified {1}", key, getReportName((JObject)array.Root));
+                        continue;
+                    }
+
+
 					string slot  = item[key].ToString();
 					JToken value = item;
 

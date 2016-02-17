@@ -62,7 +62,8 @@ namespace financial_reporting
                     populate(xlWorkSheet, values, bindings);
 				}
 
-                xlWorkSheetTemplate.Delete();
+                xlWorkSheetTemplate.Move(After:(Excel.Worksheet)xlWorkBook.Worksheets[xlWorkBook.Worksheets.Count]);
+
                 var outPath = Path.Combine(Path.GetDirectoryName(templatePath), string.Format("out-{0:yyyy-MM-dd-HH-mm-ss}", DateTime.Now)+Path.GetExtension(templatePath));
 
                 xlWorkBook.SaveAs(outPath);

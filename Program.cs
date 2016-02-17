@@ -16,6 +16,13 @@ namespace financial_reporting
         static void Main(string[] args)
         {
             var records = getRecords().OrderBy(o=>((string)o["government"]["title"]).ToLower());
+            string templatePath = args.Length>0 ? args[0] : Path.Combine(Environment.CurrentDirectory, "template.xlsm");
+
+            if(!File.Exists(templatePath))
+            {
+                Console.Error.WriteLine("File not found: {0}", templatePath);
+                return;
+            }
 
 			Console.WriteLine("{0} records found", records.Count());
 
@@ -26,7 +33,7 @@ namespace financial_reporting
             Excel.Workbook    xlWorkBook;
 
             using(new XLDisposable(xlApp = new Excel.Application()))
-            using(new XLDisposable(xlWorkBook = (Excel.Workbook)xlApp.Workbooks.Open(Environment.CurrentDirectory+"\\"+args[0], ReadOnly:true)))
+            using(new XLDisposable(xlWorkBook = (Excel.Workbook)xlApp.Workbooks.Open(templatePath, ReadOnly:true)))
             {
                 Excel.Worksheet xlWorkSheetTemplate = (Excel.Worksheet)xlWorkBook.Worksheets["{{template}}"];
 
@@ -53,8 +60,9 @@ namespace financial_reporting
 				}
 
                 xlWorkSheetTemplate.Delete();
+                var outPath = Path.Combine(Path.GetDirectoryName(templatePath), string.Format("out-{0:yyyy-MM-dd-HH-mm-ss}", DateTime.Now)+Path.GetExtension(templatePath));
 
-                xlWorkBook.SaveAs(Environment.CurrentDirectory+string.Format("\\out-{1:yyyy-MM-dd-HH-mm-ss}{0}", Path.GetExtension(args[0]), DateTime.Now));
+                xlWorkBook.SaveAs(outPath);
             }
         }
 

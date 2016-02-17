@@ -43,6 +43,9 @@ namespace financial_reporting
 				var bindings = getBindings(xlWorkSheetTemplate);
                 int row = 3;
 
+                while(!string.IsNullOrWhiteSpace((string)xlWorkSheetMenu.Cells[row, 2].Value2))
+                    row++; // start at first empty row
+
                 foreach(var record in records)
 				{
 					xlWorkSheetTemplate.Copy(Before:xlWorkSheetTemplate);

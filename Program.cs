@@ -15,49 +15,64 @@ namespace financial_reporting
     {
         static void Main(string[] args)
         {
-            var records = getRecords().OrderBy(o=>((string)o["government"]["title"]).ToLower());
             string templatePath = args.Length>0 ? args[0] : Path.Combine(Environment.CurrentDirectory, "template.xlsm");
-
+            
             if(!File.Exists(templatePath))
             {
                 Console.Error.WriteLine("File not found: {0}", templatePath);
                 return;
             }
 
-			Console.WriteLine("{0} records found", records.Count());
+            getTerm("ca");//dummy just for console output;
 
-			foreach(dynamic r in records)
-				Console.WriteLine(r.government.title);
+            var reports = getIndexedRecords().OrderBy(o=>o.name.ToLower()).ToArray();
+            
+			Console.WriteLine("{0} records found", reports.Count());
+
+			foreach(var r in reports)
+				Console.WriteLine("{0} - {1}", r.government, r.name);
 
             Excel.Application xlApp;
             Excel.Workbook    xlWorkBook;
 
+            Console.WriteLine();
+			Console.WriteLine("Loading Excel template {0}", Path.GetFileName(templatePath));
+
             using(new XLDisposable(xlApp = new Excel.Application()))
             using(new XLDisposable(xlWorkBook = (Excel.Workbook)xlApp.Workbooks.Open(templatePath, ReadOnly:true)))
             {
+                var oSheetNames = xlWorkBook.Worksheets.OfType<Excel.Worksheet>().Select(o=>o.Name).ToList();
+
                 Excel.Worksheet xlWorkSheetTemplate = (Excel.Worksheet)xlWorkBook.Worksheets["{{template}}"];
 
                 Excel.Worksheet xlWorkSheetMenu = (Excel.Worksheet)xlWorkBook.Worksheets["MENU"];
 
-
 				var bindings = getBindings(xlWorkSheetTemplate);
                 int row = 3;
 
-                while(!string.IsNullOrWhiteSpace((string)xlWorkSheetMenu.Cells[row, 2].Value2))
-                    row++; // start at first empty row
-
-                foreach(var record in records)
+                foreach(var report in reports)
 				{
+                    Console.WriteLine();
+
+                    if(oSheetNames.Contains(report.name)) {
+                        Console.WriteLine("SKIP: Sheet already exists: {0}", report.name);
+                        continue;
+                    }
+
+                    oSheetNames.Add(report.name);
+
 					xlWorkSheetTemplate.Copy(Before:xlWorkSheetTemplate);
 
-                    xlWorkSheetMenu.Cells[row, 2] = getReportName(record);
-                    row++;
+                    while(!string.IsNullOrWhiteSpace((string)xlWorkSheetMenu.Cells[row, 2].Value2))
+                        row++; // next empty row
+
+                    xlWorkSheetMenu.Cells[row, 2] = report.name;
 
 					Excel.Worksheet xlWorkSheet = xlWorkBook.Worksheets[xlWorkSheetTemplate.Index-1];
 
-					var values = mapValues(record);
+					var values = mapValues(report.record);
 
-					xlWorkSheet.Name = getReportName(record);
+					xlWorkSheet.Name = report.name;
 
                     populate(xlWorkSheet, values, bindings);
 				}
@@ -82,8 +97,14 @@ namespace financial_reporting
 			Regex placeHolder = new Regex(@"^\s*{{(.*?)\}\}\s*$");
             Regex pathTarget  = new Regex(@"^(.+?)=(.+?)$");
 
+            var i=0;
+            var count = sheet.UsedRange.Rows.Count * sheet.UsedRange.Columns.Count;
+
             foreach (Excel.Range cell in sheet.UsedRange)
             {
+
+    			Console.Write("\rAnalyzing bindings {0}%    ", ++i*100/count);
+
                 string cellText = string.Format("{0}", cell.Value2 ?? "");
 
                 if (!placeHolder.IsMatch(cellText))
@@ -105,6 +126,8 @@ namespace financial_reporting
 				});
 			}
 
+    		Console.WriteLine();
+
 			return bindings;
 		}
 
@@ -123,7 +146,7 @@ namespace financial_reporting
         
             var name   = (string)report["government"]["title"];
 
-            return name.Substring(0, Math.Min(name.Length, 30));
+            return truncate(name, 30).Trim();
         }
 
         //==============================
@@ -136,7 +159,7 @@ namespace financial_reporting
 
             foreach (var binding in bindings)
             {
-    			Console.Write("\rCompiling {0} {1}% ({2}/{3})...  ", sheet.Name, (++i*100)/count, i, count);
+    			Console.Write("\rPopulating {0} {1}%   ", sheet.Name, (++i*100)/count);
 
 				object value = "";
 
@@ -184,10 +207,16 @@ namespace financial_reporting
 
 			Dictionary<string, object> map = new Dictionary<string,object>();
 
-			var qValues = record.Descendants().Where(o => types.Contains(o.Type));
+			var qValues = record.Descendants().Where(o => types.Contains(o.Type)).ToArray();
 
-			foreach(var jValue in qValues)
+            var i=0;
+
+			foreach(var jValue in qValues){
+                Console.Write("\rMapping report values {0}%   ", ++i*100/qValues.Length);
 				map.Add(jValue.Path, toXlValue(jValue));
+            }
+
+            Console.WriteLine();
 
 			return map;
 		}
@@ -331,7 +360,7 @@ namespace financial_reporting
         //==============================
         //
         //==============================
-        static IEnumerable<JObject> getRecords()
+        static recordInfo [] getIndexedRecords()
         {
 			Console.WriteLine("Loading records...");
 
@@ -340,18 +369,62 @@ namespace financial_reporting
             UriBuilder url = new UriBuilder("https://api.cbd.int/api/v2013/index");
 
             url.Query += string.Format("&q={0}",    Uri.EscapeUriString("schema_s:resourceMobilisation AND _state_s:public AND realm_ss:chm"));
-            url.Query += string.Format("&fl={0}",   Uri.EscapeUriString("identifier_s"));
+            url.Query += string.Format("&fl={0}",   Uri.EscapeUriString("identifier_s,government_s"));
             url.Query += string.Format("&rows={0}", Uri.EscapeUriString("2000"));
 
             url.Query = url.Query.TrimStart('&', '?');
             
             var result = JObject.Parse(wc.DownloadString(url.ToString()));
 
-            var identifiers = result["response"]["docs"].Select(o=>(string)o["identifier_s"]);
+            return result["response"]["docs"].Select(o=> new recordInfo() {
+                identifier = (string)o["identifier_s"],
+                government = (string)o["government_s"]
+            }).ToArray();
+        }
 
-            var jRecords = identifiers.Select(id=> JObject.Parse(wc.DownloadString("https://api.cbd.int/api/v2013/documents/"+id)));
+        class recordInfo {
 
-            return jRecords.Select(o=>normalizeRecord((JObject)o)).ToArray();
+            public string identifier;
+            public string government;
+
+            Term    mGovernment = null;
+            JObject mRecord = null;
+
+            public string name
+            {
+                get { 
+
+                    if(mGovernment==null)
+                        mGovernment = getTerm(government);
+
+                    return truncate(mGovernment.title, 30);
+                }
+            }
+
+            public JObject record
+            {
+                get { 
+
+                    if(mRecord==null) {
+
+                        Console.WriteLine("Loading report: {0}...", getTerm(government).title);
+
+                        WebClient wc = new WebClient();
+            
+                        mRecord = normalizeRecord(JObject.Parse(wc.DownloadString("https://api.cbd.int/api/v2013/documents/"+identifier)));
+                    }
+
+                    return mRecord;
+                }
+            }
+        }
+
+        //==============================
+        //
+        //==============================
+        static string truncate(string text, int len) 
+        {
+            return text.Substring(0, Math.Min(text.Length, len));
         }
 
         static SortedList<string, Term> termsCache;

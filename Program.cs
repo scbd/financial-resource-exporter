@@ -30,11 +30,18 @@ namespace financial_reporting
             {
                 Excel.Worksheet xlWorkSheetTemplate = (Excel.Worksheet)xlWorkBook.Worksheets["{{template}}"];
 
+                Excel.Worksheet xlWorkSheetMenu = (Excel.Worksheet)xlWorkBook.Worksheets["MENU"];
+
+
 				var bindings = getBindings(xlWorkSheetTemplate);
+                int row = 3;
 
                 foreach(var record in records)
 				{
 					xlWorkSheetTemplate.Copy(Before:xlWorkSheetTemplate);
+
+                    xlWorkSheetMenu.Cells[row, 2] = getReportName(record);
+                    row++;
 
 					Excel.Worksheet xlWorkSheet = xlWorkBook.Worksheets[xlWorkSheetTemplate.Index-1];
 
@@ -346,7 +353,7 @@ namespace financial_reporting
 
 				termsCache = new SortedList<string,Term>();
 
-                foreach(var term in loadDomainTerms("countries")) termsCache.Add(term.identifier, term); //TODO USE Special Countries mapping
+                foreach (var term in loadDomainTerms("countries")) termsCache.Add(term.identifier, MapCountry(term.identifier)); //TODO USE Special Countries mapping
                 foreach(var term in loadDomainTerms("ISO-4217"))  termsCache.Add(term.identifier, term); //TODO USE Special Currencies mapping
                 foreach(var term in loadDomainTerms("AB782477-9942-4C6B-B9F0-79A82915A069")) termsCache.Add(term.identifier, term);
                 foreach(var term in loadDomainTerms("1FBEF0A8-EE94-4E6B-8547-8EDFCB1E2301")) termsCache.Add(term.identifier, term);
@@ -414,5 +421,221 @@ namespace financial_reporting
 
             return ret;
         }
+
+
+        static SortedList<string, string> termOverrides = new SortedList<string, string>();
+
+        private static Term MapCountry(string countryCode)
+        {
+            termOverrides = new SortedList<string, string>();
+
+            termOverrides["af"] = "Afghanistan";
+            termOverrides["al"] = "Albania";
+            termOverrides["dz"] = "Algeria";
+            termOverrides["ad"] = "Andorra";
+            termOverrides["ao"] = "Angola";
+            termOverrides["ag"] = "Antigua and Barbuda";
+            termOverrides["ar"] = "Argentina";
+            termOverrides["am"] = "Armenia";
+            termOverrides["au"] = "Australia";
+            termOverrides["at"] = "Austria";
+            termOverrides["az"] = "Azerbaijan";
+            termOverrides["bs"] = "Bahamas";
+            termOverrides["bh"] = "Bahrain";
+            termOverrides["bd"] = "Bangladesh";
+            termOverrides["bb"] = "Barbados";
+            termOverrides["by"] = "Belarus";
+            termOverrides["be"] = "Belgium";
+            termOverrides["bz"] = "Belize";
+            termOverrides["bj"] = "Benin";
+            termOverrides["bt"] = "Bhutan";
+            termOverrides["bo"] = "Bolivia";
+            termOverrides["ba"] = "Bosnia and Herzegovina";
+            termOverrides["bw"] = "Botswana";
+            termOverrides["br"] = "Brazil";
+            termOverrides["bn"] = "Brunei Darussalam";
+            termOverrides["bg"] = "Bulgaria";
+            termOverrides["bf"] = "Burkina Faso";
+            termOverrides["bi"] = "Burundi";
+            termOverrides["cv"] = "Cape Verde";
+            termOverrides["kh"] = "Cambodia";
+            termOverrides["cm"] = "Cameroon";
+            termOverrides["ca"] = "Canada";
+            termOverrides["cf"] = "Central African Republic";
+            termOverrides["td"] = "Chad";
+            termOverrides["cl"] = "Chile";
+            termOverrides["cn"] = "China";
+            termOverrides["co"] = "Colombia";
+            termOverrides["km"] = "Comoros";
+            termOverrides["cg"] = "Congo";
+            termOverrides["ck"] = "Cook Islands";
+            termOverrides["cr"] = "Costa Rica";
+            termOverrides["hr"] = "Croatia";
+            termOverrides["cu"] = "Cuba";
+            termOverrides["cy"] = "Cyprus";
+            termOverrides["cz"] = "Czech Republic";
+            termOverrides["ci"] = "Côte d'Ivoire";
+            termOverrides["kp"] = "Korea, Democratic People's Republic of";
+            termOverrides["cd"] = "Congo, Democratic Republic of the";
+            termOverrides["dk"] = "Denmark";
+            termOverrides["dj"] = "Djibouti";
+            termOverrides["dm"] = "Dominica";
+            termOverrides["do"] = "Dominican Republic";
+            termOverrides["ec"] = "Ecuador";
+            termOverrides["eg"] = "Egypt";
+            termOverrides["sv"] = "El Salvador";
+            termOverrides["gq"] = "Equatorial Guinea";
+            termOverrides["er"] = "Eritrea";
+            termOverrides["ee"] = "Estonia";
+            termOverrides["et"] = "Ethiopia";
+            termOverrides["eu"] = "European Union";
+            termOverrides["fj"] = "Fiji";
+            termOverrides["fi"] = "Finland";
+            termOverrides["fr"] = "France";
+            termOverrides["ga"] = "Gabon";
+            termOverrides["gm"] = "Gambia";
+            termOverrides["ge"] = "Georgia";
+            termOverrides["de"] = "Germany";
+            termOverrides["gh"] = "Ghana";
+            termOverrides["gr"] = "Greece";
+            termOverrides["gd"] = "Grenada";
+            termOverrides["gt"] = "Guatemala";
+            termOverrides["gn"] = "Guinea";
+            termOverrides["gw"] = "Guinea-Bissau";
+            termOverrides["gy"] = "Guyana";
+            termOverrides["ht"] = "Haiti";
+            termOverrides["va"] = "Holy See";
+            termOverrides["hn"] = "Honduras";
+            termOverrides["hu"] = "Hungary";
+            termOverrides["is"] = "Iceland";
+            termOverrides["in"] = "India";
+            termOverrides["id"] = "Indonesia";
+            termOverrides["ir"] = "Iran, Islamic Republic of";
+            termOverrides["iq"] = "Iraq";
+            termOverrides["ie"] = "Ireland";
+            termOverrides["il"] = "Israel";
+            termOverrides["it"] = "Italy";
+            termOverrides["jm"] = "Jamaica";
+            termOverrides["jp"] = "Japan";
+            termOverrides["jo"] = "Jordan";
+            termOverrides["kz"] = "Kazakhstan";
+            termOverrides["ke"] = "Kenya";
+            termOverrides["ki"] = "Kiribati";
+            termOverrides["kw"] = "Kuwait";
+            termOverrides["kg"] = "Kyrgyzstan";
+            termOverrides["la"] = "Lao People's Democratic Republic";
+            termOverrides["lv"] = "Latvia";
+            termOverrides["lb"] = "Lebanon";
+            termOverrides["ls"] = "Lesotho";
+            termOverrides["lr"] = "Liberia";
+            termOverrides["ly"] = "Libya";
+            termOverrides["li"] = "Liechtenstein";
+            termOverrides["lt"] = "Lithuania";
+            termOverrides["lu"] = "Luxembourg";
+            termOverrides["mg"] = "Madagascar";
+            termOverrides["mw"] = "Malawi";
+            termOverrides["my"] = "Malaysia";
+            termOverrides["mv"] = "Maldives";
+            termOverrides["ml"] = "Mali";
+            termOverrides["mt"] = "Malta";
+            termOverrides["mh"] = "Marshall Islands";
+            termOverrides["mr"] = "Mauritania";
+            termOverrides["mu"] = "Mauritius";
+            termOverrides["mx"] = "Mexico";
+            termOverrides["fm"] = "Micronesia, Federated States of";
+            termOverrides["mc"] = "Monaco";
+            termOverrides["mn"] = "Mongolia";
+            termOverrides["me"] = "Montenegro";
+            termOverrides["ma"] = "Morocco";
+            termOverrides["mz"] = "Mozambique";
+            termOverrides["mm"] = "Myanmar";
+            termOverrides["na"] = "Namibia";
+            termOverrides["nr"] = "Nauru";
+            termOverrides["np"] = "Nepal";
+            termOverrides["nl"] = "Netherlands";
+            termOverrides["nz"] = "New Zealand";
+            termOverrides["ni"] = "Nicaragua";
+            termOverrides["ne"] = "Niger";
+            termOverrides["ng"] = "Nigeria";
+            termOverrides["nu"] = "Niue";
+            termOverrides["no"] = "Norway";
+            termOverrides["om"] = "Oman";
+            termOverrides["pk"] = "Pakistan";
+            termOverrides["pw"] = "Palau";
+            termOverrides["pa"] = "Panama";
+            termOverrides["pg"] = "Papua New Guinea";
+            termOverrides["py"] = "Paraguay";
+            termOverrides["pe"] = "Peru";
+            termOverrides["ph"] = "Philippines";
+            termOverrides["pl"] = "Poland";
+            termOverrides["pt"] = "Portugal";
+            termOverrides["qa"] = "Qatar";
+            termOverrides["kr"] = "Korea, Republic of";
+            termOverrides["md"] = "Moldova, Republic of";
+            termOverrides["ro"] = "Romania";
+            termOverrides["ru"] = "Russian Federation";
+            termOverrides["rw"] = "Rwanda";
+            termOverrides["kn"] = "Saint Kitts and Nevis";
+            termOverrides["lc"] = "Saint Lucia";
+            termOverrides["vc"] = "Saint Vincent and the Grenadines";
+            termOverrides["ws"] = "Samoa";
+            termOverrides["sm"] = "San Marino";
+            termOverrides["st"] = "Sao Tome and Principe";
+            termOverrides["sa"] = "Saudi Arabia";
+            termOverrides["sn"] = "Senegal";
+            termOverrides["rs"] = "Serbia";
+            termOverrides["sc"] = "Seychelles";
+            termOverrides["sl"] = "Sierra Leone";
+            termOverrides["sg"] = "Singapore";
+            termOverrides["sk"] = "Slovakia";
+            termOverrides["si"] = "Slovenia";
+            termOverrides["sb"] = "Solomon Islands";
+            termOverrides["so"] = "Somalia";
+            termOverrides["za"] = "South Africa";
+            termOverrides["ss"] = "Sout Sudan";
+            termOverrides["es"] = "Spain";
+            termOverrides["lk"] = "Sri Lanka";
+            termOverrides["ps"] = "State of Palestine";
+            termOverrides["sd"] = "Sudan";
+            termOverrides["sr"] = "Suriname";
+            termOverrides["sz"] = "Swaziland";
+            termOverrides["se"] = "Sweden";
+            termOverrides["ch"] = "Switzerland";
+            termOverrides["sy"] = "Syrian Arab Republic";
+            termOverrides["tj"] = "Tajikistan";
+            termOverrides["th"] = "Thailand";
+            termOverrides["mk"] = "Macedonia, The Former Yugoslav Republic of";
+            termOverrides["tl"] = "Timor-Leste";
+            termOverrides["tg"] = "Togo";
+            termOverrides["to"] = "Tonga";
+            termOverrides["tt"] = "Trinidad and Tobago";
+            termOverrides["tn"] = "Tunisia";
+            termOverrides["tr"] = "Turkey";
+            termOverrides["tm"] = "Turkmenistan";
+            termOverrides["tv"] = "Tuvalu";
+            termOverrides["ug"] = "Uganda";
+            termOverrides["ua"] = "Ukraine";
+            termOverrides["ae"] = "United Arab Emirates";
+            termOverrides["gb"] = "United Kingdom of Great Britain and Northern Ireland";
+            termOverrides["tz"] = "Tanzania, United Republic of";
+            termOverrides["us"] = "United States of America";
+            termOverrides["uy"] = "Uruguay";
+            termOverrides["uz"] = "Uzbekistan";
+            termOverrides["vu"] = "Vanuatu";
+            termOverrides["ve"] = "Venezuela";
+            termOverrides["vn"] = "Viet Nam";
+            termOverrides["ye"] = "Yemen";
+            termOverrides["zm"] = "Zambia";
+            termOverrides["zw"] = "Zimbabwe";
+
+            Term country = new Term();
+
+            country.identifier = countryCode;
+            country.title = termOverrides.ContainsKey(countryCode) ? termOverrides[countryCode] : "";
+
+            return country;
+        }
+
+        
     }
 }

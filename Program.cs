@@ -207,7 +207,7 @@ namespace financial_reporting
             { 
                 if(jValue.Value<bool>())
                     return 1; 
-                return ""; 
+                return 0; 
             }
 
             throw new ArgumentOutOfRangeException("Unsuported value type:"+jValue.Type.ToString());

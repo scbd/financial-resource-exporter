@@ -227,9 +227,9 @@ namespace financial_reporting
         private static object toXlValue(JToken jValue)
         {
                  if(jValue==null) return "";
-            else if(jValue.Type == JTokenType.Integer)   return jValue.Value<int>();
+            else if(jValue.Type == JTokenType.Integer)   return jValue.Value<long>();
             else if(jValue.Type == JTokenType.String)    return jValue.Value<string>();
-            else if(jValue.Type == JTokenType.Float)     return jValue.Value<double>();
+            else if(jValue.Type == JTokenType.Float)     return jValue.Value<decimal>();
             else if(jValue.Type == JTokenType.Date)      return jValue.Value<DateTime>();
             else if(jValue.Type == JTokenType.Array)     return ((JArray)jValue).Count;
             else if(jValue.Type == JTokenType.Object)    return 1;
